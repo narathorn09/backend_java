@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class BackendJavaApplication {
 
 	public static void main(String[] args) {
+		System.out.println("Hello Spring Boot");
 		SpringApplication.run(BackendJavaApplication.class, args);
 	}
 
