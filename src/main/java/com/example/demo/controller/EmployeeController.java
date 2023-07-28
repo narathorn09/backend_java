@@ -1,8 +1,9 @@
 package com.example.demo.controller;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,58 +13,69 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.model.Employee;
+import com.example.demo.repository.EmployeeRepository;
 
 @RestController
 public class EmployeeController {
 	
-	private List<Employee> data = new ArrayList<Employee>();
+	@Autowired
+	EmployeeRepository employeeRepository;
 	
 	@GetMapping("/employee")
 	public List<Employee> getEmployee() {
-		return data;
+		
+		return employeeRepository.findAll();
+		
 	}
 	
 	@GetMapping("/employee/{employeeId}")
-	public Employee getEmployeeById(@PathVariable("employeeId") Integer employeeId) {
-		for(int i = 0; i < data.size(); i++) {
-			if(data.get(i).getEmployeeId().equals(employeeId)) {
-				return data.get(i);
-			}
-		}
-		return null;
+	public Optional<Employee> getEmployeeById(@PathVariable("employeeId") Integer employeeId) {
+		
+		Optional<Employee> employee = employeeRepository.findById(employeeId);
+		return employee;
+		
 	}
 	
 	@PostMapping("/employee")
 	public Employee addEmployee(@RequestBody Employee body) {
-		for(int i = 0; i < data.size(); i++) {
-			if(data.get(i).getEmployeeId() == body.getEmployeeId()) {
-				return null;
-			}
-		}
-		data.add(body);
-		return body;
+		
+		return employeeRepository.save(body);
+		
 	}
 	
 	@PutMapping("/employee/{employeeId}")
-	public String updateEmployee(@PathVariable("employeeId") Integer employeeId, @RequestBody Employee body) {
-		for(int i = 0; i < data.size(); i++) {
-			if(data.get(i).getEmployeeId().equals(employeeId)) {
-				body.setEmployeeId(employeeId);
-	            data.set(i, body);
-				return "Update Employee Success";
-			}
+	public Employee updateEmployee(@PathVariable("employeeId") Integer employeeId, @RequestBody Employee body) {
+		
+		Optional<Employee> employee = employeeRepository.findById(employeeId);
+		
+		if(employee.isPresent()) {
+			Employee employeeEdit = employee.get();
+			
+			employeeEdit.setFristName(body.getFristName());
+			employeeEdit.setLastName(body.getLastName());
+			employeeEdit.setSalary(body.getSalary());
+			
+			employeeRepository.save(employeeEdit);
+			
+			return employee.get();
+		}else {
+			return null;
 		}
-		return "Error Update Employee";
+		
 	}
 	
 	@DeleteMapping("/employee/{employeeId}")
 	public String deleteEmployee(@PathVariable("employeeId") Integer employeeId) {
-		for(int i = 0; i < data.size(); i++) {
-			if(data.get(i).getEmployeeId().equals(employeeId)) {
-				data.remove(i);
-				return "Delete Employee Success";
-			}
+		
+		Optional<Employee> employee = employeeRepository.findById(employeeId);
+		
+		if(employee.isPresent()) {
+			employeeRepository.delete(employee.get());
+			return "Delete Employee Success";
+		}else {
+			return "Employee Not Found";
 		}
-		return "Error Delete Employee";
+		
+		
 	}
 }
