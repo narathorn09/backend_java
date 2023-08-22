@@ -18,13 +18,23 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.model.Employee;
 import com.example.demo.model.Product;
+import com.example.demo.model.Role;
+import com.example.demo.model.Skill;
 import com.example.demo.repository.EmployeeRepository;
+import com.example.demo.repository.RoleRepository;
+import com.example.demo.repository.SkillRepository;
 
 @RestController
 public class EmployeeController {
 	
 	@Autowired
 	EmployeeRepository employeeRepository;
+	
+	@Autowired
+	RoleRepository roleRepository;
+	
+	@Autowired
+	SkillRepository skillRepository;
 	
 	@GetMapping("/employee")
 	public ResponseEntity<Object> getEmployee() {
@@ -44,6 +54,7 @@ public class EmployeeController {
 		
 		try {	
 			
+			
 			Optional<Employee> employee = employeeRepository.findById(employeeId);
 			if(employee.isPresent()) {
 				return new ResponseEntity<>(employee, HttpStatus.OK);
@@ -61,7 +72,14 @@ public class EmployeeController {
 	public ResponseEntity<Object> addEmployee(@RequestBody Employee body) {
 		try {
 			
+			Optional<Role> role = roleRepository.findById(4);
+			body.setRole(role.get());
+		
 			Employee employee = employeeRepository.save(body);
+			for(Skill skill: body.getSkills()) {
+				skill.setEmployee(employee);
+				skillRepository.save(skill);
+			}
 			return new ResponseEntity<>(employee, HttpStatus.CREATED);
 			
 		}catch (Exception e) {
@@ -117,6 +135,60 @@ public class EmployeeController {
 			return new ResponseEntity<>("Internal server error.", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 			
+	}
+	
+	@PutMapping("/role")
+	public ResponseEntity<Object> editRole(@RequestParam("roleID") Integer roleID,@RequestParam("employeeID") Integer employeeID) {
+		try {
+			
+			Optional<Employee> employee = employeeRepository.findById(employeeID);
+			
+			if(employee.isPresent()) {
+				Optional<Role> role = roleRepository.findById(roleID);
+
+				if(role.isPresent()) {
+					Employee employeeEdit = employee.get();
+					employeeEdit.setRole(role.get());
+					employeeRepository.save(employeeEdit);
+					return new ResponseEntity<>(employee, HttpStatus.OK);
+				}else {
+					return new ResponseEntity<>("Role Not Found.", HttpStatus.BAD_REQUEST);
+				}
+				
+			}else {
+				return new ResponseEntity<>("Employee Not Found.", HttpStatus.BAD_REQUEST);
+			}
+			
+		}catch (Exception e) {
+			return new ResponseEntity<>("Internal server error.", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	
+	}
+	
+	@PostMapping("/skill/{employeeId}")
+	public ResponseEntity<Object> addSkills(@PathVariable("employeeId") Integer employeeId,@RequestBody List<Skill> body ){
+		try {
+			
+			Optional<Employee> employee = employeeRepository.findById(employeeId);
+			
+			if(employee.isPresent()) {
+				
+				Employee employeeEdit = employee.get();
+				for(Skill skill: body) {
+					skill.setEmployee(employeeEdit);
+					skillRepository.save(skill);
+				}
+				employeeRepository.save(employeeEdit);
+				return new ResponseEntity<>(employee, HttpStatus.CREATED);
+				
+			}else {
+				return new ResponseEntity<>("Employee Not Found.", HttpStatus.BAD_REQUEST);
+			}
+			
+		}catch (Exception e) {
+			return new ResponseEntity<>("Internal server error.", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	
 	}
 	
 }
